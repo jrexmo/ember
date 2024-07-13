@@ -2,22 +2,20 @@ import cv2
 import pathlib
 import numpy as np
 import pyembroidery
-from absl import logging
+import io
 
 from ember import utils
-
-type Contour = np.ndarray
-type Image = np.ndarray
+from ember.ember_types import Contour, Image
 
 
-@utils.capture_function_output
-def read_image(image_path: str) -> Image:
-    return cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+CANNY_MIN_THRESHOLD = 100
+CANNY_MAX_THRESHOLD = 200
+DEFAULT_PATTERN_COLOR = "blue"
 
 
 @utils.capture_function_output
-def detect_edges(image: Image, threshold1: int, threshold2: int) -> Image:
-    return cv2.Canny(image, threshold1, threshold2)
+def detect_edges(image: Image) -> Image:
+    return cv2.Canny(image, CANNY_MIN_THRESHOLD, CANNY_MAX_THRESHOLD)
 
 
 @utils.capture_function_output
@@ -27,7 +25,7 @@ def find_contours(edges: np.ndarray) -> list[Contour]:
     return contours
 
 
-def create_pattern(color: str) -> pyembroidery.EmbPattern:
+def new_pattern(color: str) -> pyembroidery.EmbPattern:
     pattern = pyembroidery.EmbPattern()
     pattern.add_thread({"color": color})
     return pattern
@@ -48,53 +46,54 @@ def terminate_pattern(pattern: pyembroidery.EmbPattern, x: int, y: int) -> None:
     pattern.add_stitch_absolute(pyembroidery.END, x, y)
 
 
-def save_pattern(pattern: pyembroidery.EmbPattern, output_path: pathlib.Path) -> None:
-    pyembroidery.write_png(pattern, str(output_path))
-    logging.info(f"Pattern created and saved as {output_path}")
+def save_pattern(
+    pattern: pyembroidery.EmbPattern, output_buffer: io.BufferedWriter
+) -> None:
+    pyembroidery.write_png(pattern, output_buffer)
 
 
 def create_embroidery_from_image(
-    image_path: pathlib.Path,
-    output_path: pathlib.Path,
-    threshold1: int = 100,
-    threshold2: int = 200,
-    color: str = "red",
+    image: io.BufferedReader | bytes,
+    output_buffer: io.BufferedWriter,
 ) -> None:
-    image = read_image(image_path)
-    edges = detect_edges(image, threshold1, threshold2)
+    image = utils.opencv_img_from_buffer(image, cv2.IMREAD_ANYCOLOR)
+    edges = detect_edges(image)
     contours = find_contours(edges)
-    pattern = create_pattern(color)
+    pattern = new_pattern(DEFAULT_PATTERN_COLOR)
     for contour in contours:
         add_contour_to_pattern(pattern, contour)
 
     last_x, last_y = contours[-1][-1][0] if contours else (0, 0)
     terminate_pattern(pattern, last_x, last_y)
 
-    save_pattern(pattern, output_path)
+    save_pattern(pattern, output_buffer)
 
 
 def main():
-
     data_directory = pathlib.Path(os.getenv("DATA_DIRECTORY"))
     if not (path := data_directory / "image.jpg").exists():
-        raise ValueError(f"Please provide an example image in the data directory at {path}.\n You can modify the image name in embroidery.py main()")
-    create_embroidery_from_image(
-        data_directory / "image.jpg",
-        data_directory / "output.png",
-        threshold1=100,
-        threshold2=200,
-        color="blue",
-    )
+        raise ValueError(
+            f"Please provide an example image in the data directory at {path}.\n You can modify the image name in embroidery.py main()"
+        )
+    with (
+        open(data_directory / "image.jpg", "rb") as input_buffer,
+        open(data_directory / "output.png", "wb") as output_buffer,
+    ):
+        create_embroidery_from_image(
+            input_buffer,
+            output_buffer,
+        )
 
 
 if __name__ == "__main__":
     import os
+    import logging
 
     import dotenv
 
     dotenv.load_dotenv()
 
-    logging.set_verbosity(logging.INFO)
+    logging.basicConfig(level=logging.INFO)
 
     utils.reset_directory(os.getenv("DEBUG_DIRECTORY"))
     main()
