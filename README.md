@@ -14,7 +14,7 @@ utils.py - utility functions
 
 ## Development Tools
 - Python 3.12
-- [Rye](https://rye.astral.sh/)
+- [Rye](https://rye.astral.sh/) - `curl -sSf https://rye.astral.sh/get | bash`
 
 ## Usage
 ```
