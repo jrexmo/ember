@@ -18,8 +18,8 @@ utils.py - utility functions
 
 ## Usage
 ```
-git clone <url>
-cd <repo>
+git clone https://github.com/thornewolf/ember
+cd ember
 mkdir data
 wget <image> -O data/image.jpg # or place an image there in some other way
 rye run python src/ember/embroidery.py
