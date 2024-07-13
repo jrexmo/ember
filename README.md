@@ -27,10 +27,18 @@ rye run python src/ember/embroidery.py
 
 ## TODO
 
+### Functionality
 - [x] Setup the repo
 - [ ] Contour -> Stich functionality is buggy. The stich is not closed when drawn, leading to open shapes. Fix is probably to add an additonal stick connecting the first and last contour element locations.
 - [ ] Contours need to be filled when drawn. I think we should do this by identifying "islands" of pixels and filling them in with DFS with a preference order of <move same direction, move right, move left, move down> then trigger DFS going from top left to bottom right. This should cause us to "fill" with stiches going back and forth down each individual shape.
 - [ ] Background contour is not defined. This might be related to the previous issue, there is no good point where we can reference the background and fill it in.
+
+### Server
+- [ ] Make a FastAPI interface for the embroidery.py script.
+
+### Tooling
+- [ ] Make a CLI interface for the embroidery.py script.
+- [ ] Make a Justfile for the project.
 
 ## References
 - https://zeedigitizing.com/
