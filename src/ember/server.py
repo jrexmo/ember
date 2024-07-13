@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 from tempfile import NamedTemporaryFile
 import uvicorn
-from embroidery import create_embroidery_from_image
+from ember.embroidery import create_embroidery_from_image
 import logging
 
 # Configure logging
