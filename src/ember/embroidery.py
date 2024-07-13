@@ -76,8 +76,10 @@ def create_embroidery_from_image(
 def main():
 
     data_directory = pathlib.Path(os.getenv("DATA_DIRECTORY"))
+    if not (path := data_directory / "image.jpg").exists():
+        raise ValueError(f"Please provide an example image in the data directory at {path}.\n You can modify the image name in embroidery.py main()")
     create_embroidery_from_image(
-        data_directory / "input_image.jpg",
+        data_directory / "image.jpg",
         data_directory / "output.png",
         threshold1=100,
         threshold2=200,

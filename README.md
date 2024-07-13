@@ -20,7 +20,9 @@ utils.py - utility functions
 ```
 git clone <url>
 cd <repo>
-rye run src/ember/embroidery.py
+mkdir data
+wget <image> -O data/image.jpg # or place an image there in some other way
+rye run python src/ember/embroidery.py
 ```
 
 ## Collaborators
