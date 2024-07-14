@@ -52,7 +52,7 @@ def save_pattern(
     pyembroidery.write_png(pattern, output_buffer)
 
 
-def create_embroidery_from_image(
+def create_embroidery_naive(
     image: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
 ) -> None:
@@ -79,7 +79,7 @@ def main():
         open(data_directory / "image.jpg", "rb") as input_buffer,
         open(data_directory / "output.png", "wb") as output_buffer,
     ):
-        create_embroidery_from_image(
+        create_embroidery_naive(
             input_buffer,
             output_buffer,
         )

@@ -9,7 +9,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from ember import utils
-from ember.embroidery import create_embroidery_from_image
+from ember.embroidery import create_embroidery_naive
 
 dotenv.load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,7 @@ async def create_embroidery(
 
     try:
         with open(output_path, "wb") as output_buffer:
-            create_embroidery_from_image(await file.read(), output_buffer)
+            create_embroidery_naive(await file.read(), output_buffer)
         return FileResponse(
             str(output_path), media_type="image/png", filename=output_filename
         )
