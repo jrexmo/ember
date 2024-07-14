@@ -8,11 +8,12 @@ This module exposes a function that accepts an image, creates an embroidery patt
 ## code
 - https://github.com/EmbroidePy/pyembroidery"""
 
-import cv2
+import io
 import pathlib
+
+import cv2
 import numpy as np
 import pyembroidery
-import io
 
 from ember import utils
 
@@ -85,8 +86,8 @@ def main():
 
 
 if __name__ == "__main__":
-    import os
     import logging
+    import os
 
     import dotenv
 

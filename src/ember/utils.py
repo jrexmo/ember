@@ -1,14 +1,16 @@
-import os
-import io
+"""Directory management and image processing utilities for Ember."""
+
 import datetime
+import io
+import logging
+import os
 import pathlib
 import shutil
-from functools import wraps
 from collections.abc import Iterable
+from functools import wraps
 
 import cv2
 import numpy as np
-import logging
 
 from ember.ember_types import Contour, Image
 
