@@ -41,16 +41,21 @@ def terminate_pattern(pattern: pyembroidery.EmbPattern, x: int, y: int) -> None:
 
 
 def save_pattern(
-    pattern: pyembroidery.EmbPattern, output_buffer: io.BufferedWriter
+    pattern: pyembroidery.EmbPattern, output: io.BufferedWriter | pathlib.Path
 ) -> None:
-    pyembroidery.write_png(pattern, output_buffer)
+    match output:
+        case io.BufferedWriter():
+            pyembroidery.write_png(pattern, output)
+        case pathlib.Path():
+            with open(output, "wb") as output:
+                pyembroidery.write_png(pattern, output)
 
 
 def create_embroidery_naive(
-    image: io.BufferedReader | bytes,
+    data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
 ) -> None:
-    image = utils.opencv_img_from_buffer(image, cv2.IMREAD_ANYCOLOR)
+    image = utils.opencv_img_from_buffer(data, cv2.IMREAD_ANYCOLOR)
     edges = utils.detect_edges(image)
     contours = utils.find_contours(edges)
     pattern = new_pattern(DEFAULT_PATTERN_COLOR)

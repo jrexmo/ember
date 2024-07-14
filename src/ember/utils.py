@@ -3,9 +3,7 @@ import io
 import datetime
 import pathlib
 import shutil
-import typing
 from functools import wraps
-from typing import Callable
 from collections.abc import Iterable
 
 import cv2
@@ -20,8 +18,8 @@ CANNY_MIN_THRESHOLD = 100
 CANNY_MAX_THRESHOLD = 200
 
 
-T = typing.TypeVar("T")
-StorableData = np.ndarray | list[np.ndarray] | tuple[np.ndarray]
+DataType = Contour | Image
+type StorableData = DataType | Iterable[DataType]
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +54,13 @@ def store_data_as_image(
             raise ValueError(f"Unsupported shape {data.shape} for {path}")
         return [written_path]
     if isinstance(data, Iterable):
-        written_paths = []
+        written_paths: list[pathlib.Path] = []
         for i, data_holder in enumerate(data):
             written_paths += store_data_as_image(data_holder, path, f"{filename}_{i}")
         return written_paths
 
 
-def capture_function_output(
-    func: Callable[[T], StorableData],
-) -> Callable[[T], StorableData]:
+def capture_function_output(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         directory = os.getenv("DEBUG_DIRECTORY")
@@ -107,7 +103,7 @@ def detect_edges(image: Image) -> Image:
 
 
 @capture_function_output
-def find_contours(edges: np.ndarray) -> list[Contour]:
+def find_contours(edges: Contour) -> list[Contour]:
     # Discard the contour heiararchy
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return contours
