@@ -17,7 +17,7 @@ dotenv.load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TEMP_DIR = pathlib.Path("tmp")
+TEMP_DIR = pathlib.Path(os.getenv("TEMP_DIRECTORY"))
 INPUT_DIR = TEMP_DIR / "input"
 OUTPUT_DIR = TEMP_DIR / "output"
 DEFAULT_DELETE_DELAY = 10
