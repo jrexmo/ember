@@ -1,3 +1,13 @@
+"""Embroidery creation logic.
+
+This module exposes a function that accepts an image, creates an embroidery pattern from it, and saves this pattern as a PNG image.
+
+## concepts
+- https://edutechwiki.unige.ch/en/Embroidery_format_DST
+
+## code
+- https://github.com/EmbroidePy/pyembroidery"""
+
 import cv2
 import pathlib
 import numpy as np
@@ -5,24 +15,8 @@ import pyembroidery
 import io
 
 from ember import utils
-from ember.ember_types import Contour, Image
 
-
-CANNY_MIN_THRESHOLD = 100
-CANNY_MAX_THRESHOLD = 200
 DEFAULT_PATTERN_COLOR = "blue"
-
-
-@utils.capture_function_output
-def detect_edges(image: Image) -> Image:
-    return cv2.Canny(image, CANNY_MIN_THRESHOLD, CANNY_MAX_THRESHOLD)
-
-
-@utils.capture_function_output
-def find_contours(edges: np.ndarray) -> list[Contour]:
-    # Discard the contour heiararchy
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    return contours
 
 
 def new_pattern(color: str) -> pyembroidery.EmbPattern:
@@ -57,8 +51,8 @@ def create_embroidery_naive(
     output_buffer: io.BufferedWriter,
 ) -> None:
     image = utils.opencv_img_from_buffer(image, cv2.IMREAD_ANYCOLOR)
-    edges = detect_edges(image)
-    contours = find_contours(edges)
+    edges = utils.detect_edges(image)
+    contours = utils.find_contours(edges)
     pattern = new_pattern(DEFAULT_PATTERN_COLOR)
     for contour in contours:
         add_contour_to_pattern(pattern, contour)

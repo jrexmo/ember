@@ -1,12 +1,14 @@
 import logging
 import os
 import pathlib
+import time
 from contextlib import asynccontextmanager
 
 import dotenv
 import uvicorn
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi import BackgroundTasks
 
 from ember import utils
 from ember.embroidery import create_embroidery_naive
@@ -15,39 +17,52 @@ dotenv.load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+TEMP_DIR = pathlib.Path("tmp")
+INPUT_DIR = TEMP_DIR / "input"
+OUTPUT_DIR = TEMP_DIR / "output"
+DEFAULT_DELETE_DELAY = 10
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     utils.reset_directory(os.getenv("DEBUG_DIRECTORY"))
+    TEMP_DIR.mkdir(exist_ok=True, parents=True)
+    INPUT_DIR.mkdir(exist_ok=True, parents=True)
+    OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
     yield
+    # TODO: This cleanup is not executed.
+    logger.info("Cleaning up temporary directories")
+    INPUT_DIR.unlink(missing_ok=True)
+    OUTPUT_DIR.unlink(missing_ok=True)
+    TEMP_DIR.unlink(missing_ok=True)
 
 
 app = FastAPI(lifespan=lifespan)
 
 
+def delete_files_after_delay(files: list[pathlib.Path], delay=DEFAULT_DELETE_DELAY):
+    time.sleep(delay)
+    for file in files:
+        file.unlink(missing_ok=True)
+
+
 @app.post("/embroidery/")
 async def create_embroidery(
-    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
-    temp_dir = pathlib.Path("/tmp/embroidery")
-    temp_dir.mkdir(exist_ok=True)
-    input_dir = temp_dir / "input"
-    output_dir = temp_dir / "output"
-    input_dir.mkdir(exist_ok=True)
-    output_dir.mkdir(exist_ok=True)
-    input_path = input_dir / file.filename
+    input_path = INPUT_DIR / file.filename
     output_filename = f"{pathlib.Path(file.filename).stem}_embroidery.png"
-    output_path = output_dir / output_filename
+    output_path = OUTPUT_DIR / output_filename
 
-    try:
-        with open(output_path, "wb") as output_buffer:
-            create_embroidery_naive(await file.read(), output_buffer)
-        return FileResponse(
-            str(output_path), media_type="image/png", filename=output_filename
-        )
-    finally:
-        input_path.unlink(missing_ok=True)
-        # output_path.unlink(missing_ok=True)
+    with open(input_path, "wb") as input_buffer:
+        input_buffer.write(await file.read())
+    with open(output_path, "wb") as output_buffer:
+        create_embroidery_naive(open(input_path, "rb"), output_buffer)
+
+    background_tasks.add_task(delete_files_after_delay, [input_path, output_path])
+    return FileResponse(
+        str(output_path), media_type="image/png", filename=output_filename
+    )
 
 
 @app.get("/debug")

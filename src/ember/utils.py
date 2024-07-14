@@ -12,10 +12,13 @@ import cv2
 import numpy as np
 import logging
 
-from ember.ember_types import Image
+from ember.ember_types import Contour, Image
 
 DEFAULT_IMAGE_HEIGHT = 2000
 DEFAULT_IMAGE_WIDTH = 4000
+CANNY_MIN_THRESHOLD = 100
+CANNY_MAX_THRESHOLD = 200
+
 
 T = typing.TypeVar("T")
 StorableData = np.ndarray | list[np.ndarray] | tuple[np.ndarray]
@@ -71,7 +74,7 @@ def capture_function_output(
         target_path = pathlib.Path(directory)
 
         written_paths = store_data_as_image(
-            result, target_path, prefix_with_time(func.__name__)
+            result, target_path, prefix_with_time(f"{func.__module__}.{func.__name__}")
         )
         logger.info(
             f"Capturing output of {func.__name__} to {[str(p) for p in written_paths]}"
@@ -96,6 +99,18 @@ def opencv_img_from_buffer(buffer: io.BufferedReader | bytes, flags) -> Image:
         case _:
             raise ValueError("Invalid buffer type")
     return cv2.imdecode(bytes_as_np_array, flags)
+
+
+@capture_function_output
+def detect_edges(image: Image) -> Image:
+    return cv2.Canny(image, CANNY_MIN_THRESHOLD, CANNY_MAX_THRESHOLD)
+
+
+@capture_function_output
+def find_contours(edges: np.ndarray) -> list[Contour]:
+    # Discard the contour heiararchy
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
 
 
 def image_from_contours(

@@ -1,12 +1,32 @@
-import cv2
+"""Example implementation of region-based segmentation using watershed transform.
+
+## concepts
+- https://en.wikipedia.org/wiki/Watershed_(image_processing)
+- https://en.wikipedia.org/wiki/Sobel_operator
+
+## code
+- https://scikit-image.org/docs/stable/auto_examples/applications/plot_coins_segmentation.html
+- https://docs.scipy.org/doc/scipy/reference/ndimage.html
+
+## test implementations
+- label2rgb: https://chatgpt.com/share/81a7c671-70fc-49ca-b044-67268e42c4ae
+- binary_fill_holes: https://chatgpt.com/share/dc4e5b51-519c-4ce0-86d8-fd4251df5674
+"""
+
+import io
+import logging
+import os
+import pathlib
+
+import dotenv
 import numpy as np
-from ember import utils
+from PIL import Image
 from scipy import ndimage as ndi
-from skimage.filters import sobel
 from skimage import segmentation
 from skimage.color import label2rgb
-from PIL import Image
-import io
+from skimage.filters import sobel
+
+from ember import utils
 
 
 class Segmentation:
@@ -47,13 +67,6 @@ def region_based_segmentation(image: bytes) -> Segmentation:
     overlay_image = Image.fromarray((image_label_overlay * 255).astype(np.uint8))
 
     return Segmentation(segmented_image, labeled_image, overlay_image)
-
-
-import os
-import pathlib
-import logging
-import dotenv
-from PIL import Image
 
 
 def main():
