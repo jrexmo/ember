@@ -1,3 +1,8 @@
+"""Ember web interface.
+
+This webapp exposes the embroidery functionality defined elsewhere in the Ember project.
+"""
+
 import logging
 import os
 import pathlib
@@ -107,9 +112,10 @@ async def debug_info():
     )
 
 
+# TODO: Convert this to a Jinja rendered template.
 @app.get("/")
 async def read_root():
-    return FileResponse("static/index.html")
+    return FileResponse("src/ember/webapp/templates/index.html")
 
 
 if __name__ == "__main__":
