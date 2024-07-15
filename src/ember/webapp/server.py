@@ -41,7 +41,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Serve static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="src/ember/webapp/templates"), name="static")
 
 
 def delete_files_after_delay(files: list[pathlib.Path], delay=DEFAULT_DELETE_DELAY):
