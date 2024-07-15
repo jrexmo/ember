@@ -20,6 +20,7 @@ utils.py - utility functions
 ```
 git clone https://github.com/thornewolf/ember
 cd ember
+rye sync
 mkdir data
 wget <image> -O data/image.jpg # or place an image there in some other way
 rye run python src/ember/embroidery.py
@@ -47,7 +48,9 @@ rye run python src/ember/embroidery.py
 - https://www.etsy.com/market/new_york_digitizing?ref=lp_queries_external_top-2
 - https://github.com/manthrax/dst-format
 - https://github.com/EmbroidePy/pyembroidery/tree/main
+- https://zdigitizing.net/wp-content/uploads/2023/08/Girl-Face-4x4-1.pdf
 
 ## Collaborators
 - Thorne Wolfenbarger
 - Daniel Bump
+- Jackson Morris

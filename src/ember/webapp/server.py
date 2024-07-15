@@ -2,13 +2,14 @@ import logging
 import os
 import pathlib
 import time
+import base64
 from contextlib import asynccontextmanager
 
 import dotenv
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi import BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, Request
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from ember import utils
 from ember.embroidery import create_embroidery_naive
@@ -39,6 +40,9 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 def delete_files_after_delay(files: list[pathlib.Path], delay=DEFAULT_DELETE_DELAY):
     time.sleep(delay)
@@ -48,7 +52,7 @@ def delete_files_after_delay(files: list[pathlib.Path], delay=DEFAULT_DELETE_DEL
 
 @app.post("/embroidery/")
 async def create_embroidery(
-    background_tasks: BackgroundTasks, file: UploadFile = File(...)
+    request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
     input_path = INPUT_DIR / file.filename
     output_filename = f"{pathlib.Path(file.filename).stem}_embroidery.png"
@@ -60,26 +64,52 @@ async def create_embroidery(
         create_embroidery_naive(open(input_path, "rb"), output_buffer)
 
     background_tasks.add_task(delete_files_after_delay, [input_path, output_path])
-    return FileResponse(
-        str(output_path), media_type="image/png", filename=output_filename
-    )
+
+    # Check if it's an HTMX request
+    if request.headers.get("HX-Request") == "true":
+        # Read the image file and encode it as base64
+        with open(output_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+
+        # Return an HTML response with the embedded image
+        html_response = (
+            f'<img src="data:image/png;base64,{img_data}" alt="Embroidered Image">'
+        )
+        return HTMLResponse(content=html_response)
+    else:
+        # Return the file as usual for non-HTMX requests
+        return FileResponse(
+            str(output_path), media_type="image/png", filename=output_filename
+        )
 
 
 @app.get("/debug")
 async def debug_info():
-    temp_dir = pathlib.Path("/tmp/embroidery")
-    input_dir = temp_dir / "input"
-    output_dir = temp_dir / "output"
+    print(list(INPUT_DIR.glob("*")))
+    print(list(OUTPUT_DIR.glob("*")))
 
     return JSONResponse(
         {
-            "temp_dir_exists": temp_dir.exists(),
-            "input_dir_exists": input_dir.exists(),
-            "output_dir_exists": output_dir.exists(),
-            "input_files": [str(f) for f in input_dir.glob("*") if f.is_file()],
-            "output_files": [str(f) for f in output_dir.glob("*") if f.is_file()],
+            "temp_dir_exists": TEMP_DIR.exists(),
+            "input_dir_exists": INPUT_DIR.exists(),
+            "output_dir_exists": OUTPUT_DIR.exists(),
+            "input_files": [
+                {"name": f.name, "url": f"/static/input/{f.name}"}
+                for f in INPUT_DIR.glob("*")
+                if f.is_file()
+            ],
+            "output_files": [
+                {"name": f.name, "url": f"/static/output/{f.name}"}
+                for f in OUTPUT_DIR.glob("*")
+                if f.is_file()
+            ],
         }
     )
+
+
+@app.get("/")
+async def read_root():
+    return FileResponse("static/index.html")
 
 
 if __name__ == "__main__":
