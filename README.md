@@ -50,6 +50,9 @@ rye run python src/ember/embroidery.py
 - https://github.com/EmbroidePy/pyembroidery/tree/main
 - https://zdigitizing.net/wp-content/uploads/2023/08/Girl-Face-4x4-1.pdf
 
+## Documentation
+https://drive.google.com/drive/folders/12mpAu_EJxsFcHfvugEbbVUF2j9kYIurb
+
 ### Other dependencies to consider
 - https://jinjax.scaletti.dev/
 
