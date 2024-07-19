@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 import pyembroidery
 
-from ember import utils
+from ember.embroider import utils
 
 DEFAULT_PATTERN_COLOR = "blue"
 

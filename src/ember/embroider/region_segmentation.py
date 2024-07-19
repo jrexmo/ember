@@ -26,7 +26,7 @@ from skimage import segmentation
 from skimage.color import label2rgb
 from skimage.filters import sobel
 
-from ember import utils
+from ember.embroider import utils
 
 
 class Segmentation:

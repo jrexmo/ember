@@ -12,7 +12,7 @@ from functools import wraps
 import cv2
 import numpy as np
 
-from ember.ember_types import Contour, Image
+from ember.embroider.image_types import Contour, Image
 
 DEFAULT_IMAGE_HEIGHT = 2000
 DEFAULT_IMAGE_WIDTH = 4000
