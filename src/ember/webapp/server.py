@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from ember import utils
-from ember.embroidery import create_embroidery_naive
+from ember.embroider import embroidery
 
 dotenv.load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -66,7 +66,7 @@ async def create_embroidery(
     with open(input_path, "wb") as input_buffer:
         input_buffer.write(await file.read())
     with open(output_path, "wb") as output_buffer:
-        create_embroidery_naive(open(input_path, "rb"), output_buffer)
+        embroidery.create_embroidery_naive(open(input_path, "rb"), output_buffer)
 
     background_tasks.add_task(delete_files_after_delay, [input_path, output_path])
 
