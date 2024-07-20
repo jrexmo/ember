@@ -16,7 +16,7 @@ from fastapi import FastAPI, File, UploadFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from ember import utils
+from ember.embroider import utils
 from ember.embroider import embroidery
 
 dotenv.load_dotenv()

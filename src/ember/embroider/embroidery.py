@@ -56,6 +56,18 @@ def create_embroidery_naive(
     data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
 ) -> None:
+    """
+    First pass to create an embroidery pattern from an image.
+
+    This function reads an image, detects its edges, finds contours, and creates an embroidery pattern from these contours.
+
+    Args:
+        data: The input image data.
+        output_buffer: The output buffer to write the embroidery pattern to
+
+    Returns:
+        None
+    """
     image = utils.opencv_img_from_buffer(data, cv2.IMREAD_ANYCOLOR)
     edges = utils.detect_edges(image)
     contours = utils.find_contours(edges)
@@ -65,6 +77,64 @@ def create_embroidery_naive(
 
     last_x, last_y = contours[-1][-1][0] if contours else (0, 0)
     terminate_pattern(pattern, last_x, last_y)
+
+    save_pattern(pattern, output_buffer)
+
+
+def create_embroidery_sweeping(
+    data: io.BufferedReader | bytes,
+    output_buffer: io.BufferedWriter,
+    color_threshold: int = 30,
+    stitch_length: int = 10,
+) -> None:
+    """
+    Create an embroidery pattern from an image using a sweeping approach.
+
+    This function reads an image and creates an embroidery pattern by sweeping
+    from left to right, top to bottom. It makes stitches as long as possible
+    while the color remains similar, changing color only when there's a
+    significant difference.
+
+    Args:
+        data: The input image data.
+        output_buffer: The output buffer to write the embroidery pattern to.
+        color_threshold: The threshold for color difference to start a new stitch.
+        stitch_length: The maximum length of a single stitch.
+
+    Returns:
+        None
+    """
+    image = utils.opencv_img_from_buffer(data, cv2.IMREAD_COLOR)
+    height, width = image.shape[:2]
+
+    pattern = pyembroidery.EmbPattern()
+
+    def color_distance(color1: np.ndarray, color2: np.ndarray) -> float:
+        return np.sqrt(np.sum((color1 - color2) ** 2))
+
+    def add_stitch(x: int, y: int, color: tuple[int, int, int]) -> None:
+        pattern.add_thread({"color": f"#{color[2]:02x}{color[1]:02x}{color[0]:02x}"})
+        pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
+
+    current_color = image[0, 0]
+    last_stitch_pos = (0, 0)
+    add_stitch(0, 0, current_color)
+
+    for y in range(height):
+        for x in range(width):
+            color = image[y, x]
+
+            if (
+                color_distance(color, current_color) > color_threshold
+                or abs(x - last_stitch_pos[0]) >= stitch_length
+                or abs(y - last_stitch_pos[1]) >= stitch_length
+            ):
+                add_stitch(x, y, color)
+                current_color = color
+                last_stitch_pos = (x, y)
+
+    # Add the final stitch
+    pattern.add_stitch_absolute(pyembroidery.END, width - 1, height - 1)
 
     save_pattern(pattern, output_buffer)
 
@@ -79,7 +149,7 @@ def main():
         open(data_directory / "image.jpg", "rb") as input_buffer,
         open(data_directory / "output.png", "wb") as output_buffer,
     ):
-        create_embroidery_naive(
+        create_embroidery_sweeping(
             input_buffer,
             output_buffer,
         )
