@@ -90,11 +90,6 @@ def create_embroidery_sweeping(
     """
     Create an embroidery pattern from an image using a sweeping approach.
 
-    This function reads an image and creates an embroidery pattern by sweeping
-    from left to right, top to bottom. It makes stitches as long as possible
-    while the color remains similar, changing color only when there's a
-    significant difference.
-
     Args:
         data: The input image data.
         output_buffer: The output buffer to write the embroidery pattern to.
@@ -104,15 +99,21 @@ def create_embroidery_sweeping(
     Returns:
         None
     """
-    image = utils.opencv_img_from_buffer(data, cv2.IMREAD_COLOR)
-    height, width = image.shape[:2]
+    # Validate that data is not empty
+    if data is None or (isinstance(data, bytes) and len(data) == 0):
+        raise ValueError("Input data is empty or invalid.")
 
+    image = utils.opencv_img_from_buffer(data, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("Could not convert input data to an image.")
+
+    height, width = image.shape[:2]
     pattern = pyembroidery.EmbPattern()
 
     def color_distance(color1: np.ndarray, color2: np.ndarray) -> float:
-        return np.sqrt(np.sum((color1 - color2) ** 2))
+        return np.linalg.norm(color1 - color2)
 
-    def add_stitch(x: int, y: int, color: tuple[int, int, int]) -> None:
+    def add_stitch(x: int, y: int, color: tuple) -> None:
         pattern.add_thread({"color": f"#{color[2]:02x}{color[1]:02x}{color[0]:02x}"})
         pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
 
@@ -122,7 +123,7 @@ def create_embroidery_sweeping(
 
     for y in range(height):
         for x in range(width):
-            color = image[y, x]
+            color = image  # Fix access to the pixel color
 
             if (
                 color_distance(color, current_color) > color_threshold
