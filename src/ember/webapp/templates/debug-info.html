@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Information</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.6"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Debug Information</h1>
+        <ul>
+            <li>Temp Directory Exists: {{ debug_info.temp_dir_exists }}</li>
+            <li>Input Directory Exists: {{ debug_info.input_dir_exists }}</li>
+            <li>Output Directory Exists: {{ debug_info.output_dir_exists }}</li>
+        </ul>
+
+        <h2 class="mt-4">Input Files</h2>
+        <ul>
+            {% for file in debug_info.input_files %}
+                <li>
+                    <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="mt-4">Output Files</h2>
+        <ul>
+            {% for file in debug_info.output_files %}
+                <li>
+                    <a href="{{ file.url }}" target="_blank">{{ file.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

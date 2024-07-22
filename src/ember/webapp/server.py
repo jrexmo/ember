@@ -9,12 +9,14 @@ import pathlib
 import time
 import base64
 from contextlib import asynccontextmanager
+from typing import List
 
 import dotenv
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from ember.embroider import utils
 from ember.embroider import embroidery
@@ -28,6 +30,9 @@ INPUT_DIR = TEMP_DIR / "input"
 OUTPUT_DIR = TEMP_DIR / "output"
 DEFAULT_DELETE_DELAY = 10
 
+# Setup Jinja2 templates
+templates = Jinja2Templates(directory="src/ember/webapp/templates")
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -38,18 +43,19 @@ async def lifespan(_: FastAPI):
     yield
     # TODO: This cleanup is not executed.
     logger.info("Cleaning up temporary directories")
-    INPUT_DIR.unlink(missing_ok=True)
-    OUTPUT_DIR.unlink(missing_ok=True)
-    TEMP_DIR.unlink(missing_ok=True)
+    for directory in [INPUT_DIR, OUTPUT_DIR, TEMP_DIR]:
+        for file in directory.glob("*"):
+            file.unlink(missing_ok=True)
+        directory.rmdir()
 
 
 app = FastAPI(lifespan=lifespan)
 
 # Serve static files
-app.mount("/static", StaticFiles(directory="src/ember/webapp/templates"), name="static")
+app.mount("/static", StaticFiles(directory="src/ember/webapp/static"), name="static")
 
 
-def delete_files_after_delay(files: list[pathlib.Path], delay=DEFAULT_DELETE_DELAY):
+def delete_files_after_delay(files: List[pathlib.Path], delay=DEFAULT_DELETE_DELAY):
     time.sleep(delay)
     for file in files:
         file.unlink(missing_ok=True)
@@ -80,43 +86,46 @@ async def create_embroidery(
         html_response = (
             f'<img src="data:image/png;base64,{img_data}" alt="Embroidered Image">'
         )
+        logger.info("Returning HTMX response")
         return HTMLResponse(content=html_response)
     else:
         # Return the file as usual for non-HTMX requests
+        logger.info("Returning file response")
         return FileResponse(
             str(output_path), media_type="image/png", filename=output_filename
         )
 
 
 @app.get("/debug")
-async def debug_info():
-    print(list(INPUT_DIR.glob("*")))
-    print(list(OUTPUT_DIR.glob("*")))
+async def debug_info(request: Request):
+    debug_data = {
+        "temp_dir_exists": TEMP_DIR.exists(),
+        "input_dir_exists": INPUT_DIR.exists(),
+        "output_dir_exists": OUTPUT_DIR.exists(),
+        "input_files": [
+            {"name": f.name, "url": f"/static/input/{f.name}", "show": False}
+            for f in INPUT_DIR.glob("*")
+            if f.is_file()
+        ],
+        "output_files": [
+            {"name": f.name, "url": f"/static/output/{f.name}", "show": False}
+            for f in OUTPUT_DIR.glob("*")
+            if f.is_file()
+        ],
+    }
 
-    return JSONResponse(
-        {
-            "temp_dir_exists": TEMP_DIR.exists(),
-            "input_dir_exists": INPUT_DIR.exists(),
-            "output_dir_exists": OUTPUT_DIR.exists(),
-            "input_files": [
-                {"name": f.name, "url": f"/static/input/{f.name}"}
-                for f in INPUT_DIR.glob("*")
-                if f.is_file()
-            ],
-            "output_files": [
-                {"name": f.name, "url": f"/static/output/{f.name}"}
-                for f in OUTPUT_DIR.glob("*")
-                if f.is_file()
-            ],
-        }
-    )
+    if request.headers.get("HX-Request") == "true":
+        return templates.TemplateResponse(
+            "debug-info.html", {"request": request, "debug_info": debug_data}
+        )
+    else:
+        return JSONResponse(debug_data)
 
 
-# TODO: Convert this to a Jinja rendered template.
 @app.get("/")
-async def read_root():
-    return FileResponse("src/ember/webapp/templates/index.html")
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
