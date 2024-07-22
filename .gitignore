@@ -9,6 +9,8 @@ wheels/
 # venv
 .venv
 
+*.swp
+
 # data files
 data/
 debug/
