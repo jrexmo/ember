@@ -4,9 +4,9 @@ default:
 add:
   git add -A
 
-commit msg="updates": add
+commit msg=`git status --short`: add
   git commit -m "{{msg}}"
 
 push: add commit
   git push
-  
+
