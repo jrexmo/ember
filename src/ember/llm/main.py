@@ -20,6 +20,8 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=API_KEY)
 
+VERSION = "1.0.0"  # Define the application version
+
 
 # Load the system prompt from the YAML file
 def load_system_prompt(filepath):
@@ -263,6 +265,13 @@ def summarize(file, system_prompt, model):
 def add_feature(feature_request, system_prompt, user_prompt):
     """Handle a feature request and suggest changes or new files."""
     handle_feature_request(feature_request, system_prompt, user_prompt)
+
+
+@cli.command()
+def version():
+    """Display the current version of the application."""
+    console = Console()
+    console.print(f"Current application version: {VERSION}", style="bold blue")
 
 
 if __name__ == "__main__":

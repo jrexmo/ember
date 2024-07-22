@@ -42,6 +42,42 @@ A tool for creating embroidery patterns from images.
     rye run python src/ember/embroidery.py
     ```
 
+## LLM Tool Usage
+
+The `llm` tool allows you to interact with the OpenAI language model to summarize content and handle feature requests.
+
+### Commands
+
+1. **Summarize a File**
+   To summarize a file, use the following command:
+   ```sh
+   rye run python src/ember/llm/main.py summarize <path_to_your_file>
+   ```
+
+   Options:
+   - `--system-prompt`: Specify the path to the YAML system prompt file. Default is `src/ember/system_prompt.yaml`.
+   - `--model`: Specify the model to use for summarization. Default is `gpt-4o-mini`.
+
+   Example:
+   ```sh
+   rye run python src/ember/llm/main.py summarize README.md
+   ```
+
+2. **Handle a Feature Request**
+   To handle feature requests, use:
+   ```sh
+   rye run python src/ember/llm/main.py add_feature "<feature_request>"
+   ```
+
+   Options:
+   - `--system-prompt`: Specify the path to the YAML system prompt file. Default is `src/ember/llm/system_prompt.yaml`.
+   - `--user-prompt`: Specify the path to the YAML feature request prompt file. Default is `src/ember/llm/feature_request_prompt.yaml`.
+
+   Example:
+   ```sh
+   rye run python src/ember/llm/main.py add_feature "Add support for creating SVG files."
+   ```
+
 ## TODO
 
 ### Functionality
