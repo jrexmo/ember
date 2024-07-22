@@ -99,44 +99,30 @@ def create_embroidery_sweeping(
     Returns:
         None
     """
-    # Validate that data is not empty
-    if data is None or (isinstance(data, bytes) and len(data) == 0):
-        raise ValueError("Input data is empty or invalid.")
-
     image = utils.opencv_img_from_buffer(data, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError("Could not convert input data to an image.")
-
     height, width = image.shape[:2]
-    pattern = pyembroidery.EmbPattern()
-
-    def color_distance(color1: np.ndarray, color2: np.ndarray) -> float:
-        return np.linalg.norm(color1 - color2)
-
-    def add_stitch(x: int, y: int, color: tuple) -> None:
-        pattern.add_thread({"color": f"#{color[2]:02x}{color[1]:02x}{color[0]:02x}"})
-        pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
-
-    current_color = image[0, 0]
-    last_stitch_pos = (0, 0)
-    add_stitch(0, 0, current_color)
+    pattern = new_pattern(DEFAULT_PATTERN_COLOR)
 
     for y in range(height):
-        for x in range(width):
-            color = image  # Fix access to the pixel color
+        print(f"Processing row {y} of {height}")
+        for x in range(0, width, stitch_length):
+            if x + stitch_length <= width:
+                segment = image
+                avg_color = np.mean(segment, axis=0)
 
-            if (
-                color_distance(color, current_color) > color_threshold
-                or abs(x - last_stitch_pos[0]) >= stitch_length
-                or abs(y - last_stitch_pos[1]) >= stitch_length
-            ):
-                add_stitch(x, y, color)
-                current_color = color
-                last_stitch_pos = (x, y)
+                # Check if the color is different than the last one
+                if y == 0 and x == 0:
+                    last_color = avg_color
+                else:
+                    color_diff = np.linalg.norm(avg_color - last_color)
+                    if color_diff > color_threshold:
+                        pattern.add_stitch_absolute(pyembroidery.JUMP, x, y)
+                        last_color = avg_color
 
-    # Add the final stitch
-    pattern.add_stitch_absolute(pyembroidery.END, width - 1, height - 1)
+                pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
 
+    # Terminate and save the pattern
+    terminate_pattern(pattern, width - 1, height - 1)
     save_pattern(pattern, output_buffer)
 
 
