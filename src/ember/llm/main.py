@@ -50,6 +50,24 @@ def run_cat(path):
         return str(e)
 
 
+def edit_file(path, content):
+    """Edit the contents of a file."""
+    try:
+        with open(path, "w") as file:
+            file.write(content)
+        return f"File '{path}' updated successfully."
+    except Exception as e:
+        return str(e)
+
+
+# Update available functions
+available_functions = {
+    "ls": run_ls,
+    "cat": run_cat,
+    "edit_file": edit_file,  # Add the `edit_file` function here
+}
+
+
 # Define the feature development prompt
 def load_feature_request_prompt(filepath):
     with open(filepath, "r") as file:
@@ -60,12 +78,6 @@ def load_feature_request_prompt(filepath):
 def handle_feature_request(feature_request, system_prompt_path, user_prompt_path):
     console = Console()
     prompt = load_feature_request_prompt(user_prompt_path)
-
-    # Define functions for function calling
-    available_functions = {
-        "ls": run_ls,
-        "cat": run_cat,
-    }
 
     tools = [
         {
@@ -99,6 +111,27 @@ def handle_feature_request(feature_request, system_prompt_path, user_prompt_path
                         },
                     },
                     "required": ["path"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "edit_file",
+                "description": "Edit the contents of a file.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "The file path to edit.",
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "The new content to write to the file.",
+                        },
+                    },
+                    "required": ["path", "content"],
                 },
             },
         },
@@ -219,12 +252,12 @@ def summarize(file, system_prompt, model):
 @click.argument("feature_request")
 @click.option(
     "--system-prompt",
-    default="src/ember/system_prompt.yaml",
+    default="src/ember/llm/system_prompt.yaml",
     help="Path to the YAML system prompt file.",
 )
 @click.option(
     "--user-prompt",
-    default="src/ember/feature_request_prompt.yaml",
+    default="src/ember/llm/feature_request_prompt.yaml",
     help="Path to the YAML feature request prompt file.",
 )
 def add_feature(feature_request, system_prompt, user_prompt):

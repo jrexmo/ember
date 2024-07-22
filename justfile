@@ -10,3 +10,5 @@ commit msg=`git status --short`: add
 push: add commit
   git push
 
+feature request:
+  rye run python src/ember/llm/main.py add-feature "{{request}}"
