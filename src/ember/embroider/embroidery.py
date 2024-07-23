@@ -81,9 +81,20 @@ def create_embroidery_naive(
     save_pattern(pattern, output_buffer)
 
 
+import cv2
+import numpy as np
+import pyembroidery
+from sklearn.cluster import KMeans
+from ember.embroider import utils
+import random
+
+
 def create_embroidery_sweeping(
     data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
+    color_threshold: int = 30,
+    stitch_length: int = 10,
+    num_colors: int = 5,
 ) -> None:
     """
     Create an embroidery pattern from an image using a sweeping approach.
@@ -93,18 +104,66 @@ def create_embroidery_sweeping(
         output_buffer: The output buffer to write the embroidery pattern to.
         color_threshold: The threshold for color difference to start a new stitch.
         stitch_length: The maximum length of a single stitch.
+        num_colors: The number of colors to use in the palette.
 
     Returns:
         None
     """
     image = utils.opencv_img_from_buffer(data, cv2.IMREAD_COLOR)
     height, width = image.shape[:2]
-    pattern = new_pattern(DEFAULT_PATTERN_COLOR)
+    pattern = pyembroidery.EmbPattern()
 
-    # extract the color palette from the image
-    # convert all pixels in the image to the closest color in the palette
-    # move from left to right, top to bottom on the image. start a stitch and continue until the color changes.
-    # at the end of each row, terminate the stitch. start anew on the next row.
+    # Extract the color palette from the image
+    pixels = image.reshape(-1, 3)
+    kmeans = KMeans(n_clusters=num_colors, random_state=42)
+    kmeans.fit(pixels)
+    palette = kmeans.cluster_centers_.astype(int)
+
+    # Convert all pixels in the image to the closest color in the palette
+    flat_image = image.reshape(-1, 3)
+    labels = kmeans.predict(flat_image)
+    quantized_image = palette[labels].reshape(height, width, 3)
+    utils.store_data_as_image(
+        quantized_image, pathlib.Path("./data"), "quantized_image.png"
+    )
+
+    # Move from left to right, top to bottom on the image
+    current_color = None
+    for y in range(height):
+        stitch_start = None
+
+        for x in range(width):
+            pixel_color = tuple(quantized_image[y, x])
+
+            if current_color is None:
+                # Start a new stitch with a new color
+                if stitch_start is not None:
+                    pattern.add_stitch_absolute(
+                        pyembroidery.STITCH, stitch_start[0], stitch_start[1]
+                    )
+
+                current_color = pixel_color
+
+                # Add a color change
+                pattern += random.choice(["red", "green", "blue", "yellow", "black"])
+
+                pattern.add_stitch_absolute(pyembroidery.JUMP, x, y)
+                pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
+                stitch_start = (x, y)
+            elif stitch_start and (x - stitch_start[0] >= stitch_length):
+                # Continue the stitch
+                pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
+                stitch_start = (x, y)
+
+        # Terminate the stitch at the end of each row
+        if stitch_start is not None:
+            pattern.add_stitch_absolute(pyembroidery.STITCH, width - 1, y)
+
+    # Terminate the pattern
+    pattern.add_stitch_absolute(pyembroidery.END, width - 1, height - 1)
+
+    # Save the pattern
+    save_pattern(pattern, output_buffer)
 
 
 def main():
