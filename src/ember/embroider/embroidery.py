@@ -84,8 +84,6 @@ def create_embroidery_naive(
 def create_embroidery_sweeping(
     data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
-    color_threshold: int = 30,
-    stitch_length: int = 10,
 ) -> None:
     """
     Create an embroidery pattern from an image using a sweeping approach.
@@ -103,27 +101,10 @@ def create_embroidery_sweeping(
     height, width = image.shape[:2]
     pattern = new_pattern(DEFAULT_PATTERN_COLOR)
 
-    for y in range(height):
-        print(f"Processing row {y} of {height}")
-        for x in range(0, width, stitch_length):
-            if x + stitch_length <= width:
-                segment = image
-                avg_color = np.mean(segment, axis=0)
-
-                # Check if the color is different than the last one
-                if y == 0 and x == 0:
-                    last_color = avg_color
-                else:
-                    color_diff = np.linalg.norm(avg_color - last_color)
-                    if color_diff > color_threshold:
-                        pattern.add_stitch_absolute(pyembroidery.JUMP, x, y)
-                        last_color = avg_color
-
-                pattern.add_stitch_absolute(pyembroidery.STITCH, x, y)
-
-    # Terminate and save the pattern
-    terminate_pattern(pattern, width - 1, height - 1)
-    save_pattern(pattern, output_buffer)
+    # extract the color palette from the image
+    # convert all pixels in the image to the closest color in the palette
+    # move from left to right, top to bottom on the image. start a stitch and continue until the color changes.
+    # at the end of each row, terminate the stitch. start anew on the next row.
 
 
 def main():
