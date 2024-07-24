@@ -12,7 +12,7 @@ from ember.implementations import pipeline, utils
 def create_embroidery_sweeping(
     data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
-    num_colors: int = 5,
+    num_colors: int = 2,
 ) -> None:
     """
     Converts an image to an embroidery with a series of horizontal lines.
@@ -56,6 +56,7 @@ def create_embroidery_sweeping(
             block, _ = block
             pattern.add_block(block, color)
 
+    pattern.write("data/output.dst")
     utils.save_pattern(pattern, output_buffer)
 
 
