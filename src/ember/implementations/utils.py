@@ -88,6 +88,16 @@ def capture_function_output(func):
 
 
 # IMAGE UTILS
+def rgb_to_hex(bgr_color):
+    # Convert BGR to RGB
+    rgb_color = (bgr_color[2], bgr_color[1], bgr_color[0])
+
+    # Convert RGB to HEX
+    hex_color = "#{:02x}{:02x}{:02x}".format(*rgb_color)
+
+    return hex_color
+
+
 def image_shape(image: np.ndarray) -> ImageShape:
     return ImageShape(*image.shape[:2])
 
