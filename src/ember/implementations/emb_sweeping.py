@@ -15,7 +15,7 @@ def create_embroidery_sweeping(
     num_colors: int = 5,
 ) -> None:
     """
-    Create an embroidery pattern from an image using a sweeping approach.
+    Converts an image to an embroidery with a series of horizontal lines.
 
     Args:
         data: The input image data.
@@ -30,22 +30,33 @@ def create_embroidery_sweeping(
     palette_image = utils.image_to_palette(image, num_colors)
     print(palette_image[0, 0])
 
-    pattern = pyembroidery.EmbPattern()
-    for y in range(0, shape.height, 2):
+    blocks = []
+    for y in range(0, shape.height, 3):
         groups = it.groupby(palette_image[y], key=lambda x: (x[0], x[1], x[2]))
         x_offset = 0
-        for color, group in groups:
+        for color, grouped_blocks in groups:
             hex = utils.rgb_to_hex(color)
-            group = list(group)
-            print(f"Drawing {hex} at {y=} with length {len(group)}")
-            pattern.add_block(
-                [(x + x_offset, y) for x in range(0, len(group), 3)],
-                hex,
+            grouped_blocks = list(grouped_blocks)
+            print(f"Drawing {hex} at {y=} with length {len(grouped_blocks)}")
+            blocks.append(
+                ([(x + x_offset, y) for x in range(0, len(grouped_blocks), 3)], hex)
             )
-            x_offset += len(group)
+            x_offset += len(grouped_blocks)
+
+    # sort by color, then by y, then by x
+    # blocks[block_index][0] = block
+    # blocks[block_index][0][stitch_index] = (x, y)
+    # blocks[block_index][1] = color
+    blocks = sorted(blocks, key=lambda x: (x[1], x[0][0][1], x[0][0][0]))
+
+    pattern = pyembroidery.EmbPattern()
+    for color, grouped_blocks in it.groupby(blocks, key=lambda x: x[1]):
+        for block in grouped_blocks:
+            # discard color since we have it as the key
+            block, _ = block
+            pattern.add_block(block, color)
 
     utils.save_pattern(pattern, output_buffer)
-    pyembroidery.write(pattern, "data/output.dst")
 
 
 if __name__ == "__main__":
