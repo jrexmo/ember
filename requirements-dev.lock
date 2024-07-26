@@ -210,7 +210,7 @@ scipy==1.14.0
     # via ember
     # via scikit-image
     # via scikit-learn
-setuptools==71.1.0
+setuptools==70.0.0
     # via llm
 shellingham==1.5.4
     # via typer

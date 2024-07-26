@@ -118,6 +118,20 @@ def image_to_palette(image: ImageData, num_colors: int) -> ImageData:
     return palette[labels].reshape(shape.height, shape.width, 3)
 
 
+def create_color_masks(palette_image):
+  color_masks = {}
+  height, width, _ = palette_image.shape
+
+  for y in range(height):
+    for x in range(width):
+      color = rgb_to_hex(palette_image[y, x])
+      if color not in color_masks:
+        color_masks[color] = np.zeros((height, width), dtype=np.uint8)
+      color_masks[color][y, x] = 1
+
+  return color_masks
+
+
 def reset_directory(directory: str):
     if os.path.exists(directory):
         shutil.rmtree(directory)

@@ -1,7 +1,5 @@
 import io
-import pathlib
 import itertools as it
-import random
 
 import cv2
 import pyembroidery
