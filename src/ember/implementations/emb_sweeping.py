@@ -10,7 +10,7 @@ from ember.implementations import pipeline, utils
 def create_embroidery_sweeping(
     data: io.BufferedReader | bytes,
     output_buffer: io.BufferedWriter,
-    num_colors: int = 2,
+    num_colors: int = 8,
 ) -> None:
     """
     Converts an image to an embroidery with a series of horizontal lines.
@@ -54,9 +54,22 @@ def create_embroidery_sweeping(
             block, _ = block
             pattern.add_block(block, color)
 
+    # Alternate workflow that merges same color blocks
+    # for color, grouped_blocks in it.groupby(blocks, key=lambda x: x[1]):
+    #     combined_blocks = list(
+    #         it.chain.from_iterable([block[0] for block in grouped_blocks])
+    #     )
+    #     print(f"adding {len(combined_blocks)} stitches of color {color}")
+    #     print(combined_blocks[:10])
+    #     pattern.add_block(combined_blocks, color.upper())
+
     pattern.write("data/output.dst")
     utils.save_pattern(pattern, output_buffer)
 
 
 if __name__ == "__main__":
     pipeline.run(create_embroidery_sweeping)
+    if False:
+        design = pyembroidery.read_dst("data/output.dst")
+        pyembroidery.write_png(design, "data/output.png")
+        pyembroidery.write_dst(design, "data/output.dst")
